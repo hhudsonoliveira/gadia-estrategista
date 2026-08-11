@@ -1672,19 +1672,53 @@ body.is-locked {
 /* Infinite marquee — ambient continuous motion, so linear easing is correct here.
    Items carry their spacing as margin (not gap) so the -50% loop point is exact. */
 .marquee {
+  --marquee-duration: 36s;
   position: relative;
   width: 100vw;
   margin-inline: calc(50% - 50vw);
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+/* Edge fades as overlay elements rather than mask-image: iOS Safari drops
+   frames (or stops painting entirely) when a mask sits over a compositing
+   layer that is being animated. */
+.marquee::before,
+.marquee::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  width: clamp(28px, 7%, 110px);
+  pointer-events: none;
+}
+
+.marquee::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--vinho-900), transparent);
+}
+
+.marquee::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--vinho-900), transparent);
 }
 
 .marquee__track {
   display: flex;
   width: max-content;
-  animation: marquee 52s linear infinite;
+  animation: marquee var(--marquee-duration) linear infinite;
+  /* Own compositing layer — keeps the loop smooth on mobile GPUs */
   will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* The track is shorter on narrow screens, so the same duration reads as a
+   slower crawl. Shorten it to keep the pixels-per-second roughly constant. */
+@media (max-width: 700px) {
+  .marquee {
+    --marquee-duration: 26s;
+  }
 }
 
 @keyframes marquee {
@@ -1693,7 +1727,14 @@ body.is-locked {
   }
 }
 
-.marquee:hover .marquee__track,
+/* Pause on hover only where hovering is real. On a touch screen :hover sticks
+   after a tap, which would leave the marquee frozen for the rest of the visit. */
+@media (hover: hover) and (pointer: fine) {
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+}
+
 .marquee:focus-within .marquee__track {
   animation-play-state: paused;
 }
@@ -2670,15 +2711,25 @@ body.is-locked {
   }
 
   /* The blanket animation override would freeze the marquee mid-loop.
-     Stop it outright and let the row be scrolled by hand instead. */
+     Stop it outright and hand the row over to the user to swipe instead. */
   .marquee {
     overflow-x: auto;
-    -webkit-mask-image: none;
-    mask-image: none;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .marquee::before,
+  .marquee::after {
+    display: none;
   }
 
   .marquee__track {
     animation: none !important;
     transform: none !important;
+    will-change: auto;
+  }
+
+  .marquee .portrait {
+    scroll-snap-align: center;
   }
 }
