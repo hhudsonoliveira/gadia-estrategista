@@ -339,6 +339,12 @@ p {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   font-style: italic;
+  /* Italic glyphs lean past the inline box, and background-clip:text paints
+     nothing outside it — the last letter of each line gets sliced vertically.
+     Widen the paint box and cancel the extra advance with a matching negative
+     margin, so the glyphs are whole and the layout is unchanged. */
+  padding-inline-end: 0.2em;
+  margin-inline-end: -0.2em;
 }
 
 @supports (-webkit-background-clip: text) or (background-clip: text) {
