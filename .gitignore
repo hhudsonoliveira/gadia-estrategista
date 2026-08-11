@@ -11,3 +11,7 @@ Desktop.ini
 
 # Node (não usado no site, apenas em ferramentas locais)
 node_modules/
+
+# Documentos internos (briefings, propostas) — não fazem parte do site publicado
+Briefing*.pdf
+*.briefing.html
